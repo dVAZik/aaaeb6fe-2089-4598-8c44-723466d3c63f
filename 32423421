@@ -1,0 +1,892 @@
+local CharacterAndBeamMove = [[
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+local ReplicatedFirst = game:GetService("ReplicatedFirst")
+
+-- Локальные переменные
+local LocalPlayer = Players.LocalPlayer
+local CurrentCamera = workspace.CurrentCamera
+
+-- Ссылки на объекты персонажа
+local character, humanoid, humanoidRootPart, torso, neck, rootJoint, rightShoulder
+local animator, grabAnimationTrack
+
+-- Инициализация персонажа
+local function initializeCharacter(newChar)
+    character = newChar
+    torso = character:WaitForChild("Torso")
+    humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+    neck = torso:WaitForChild("Neck")
+    humanoid = character:WaitForChild("Humanoid")
+    rootJoint = humanoidRootPart:WaitForChild("RootJoint")
+    rightShoulder = torso:WaitForChild("Right Shoulder")
+    
+    -- Анимация
+    local animator = humanoid:WaitForChild("Animator")
+    local grabAnimation = script:WaitForChild("GrabAnimation")
+    grabAnimationTrack = animator:LoadAnimation(grabAnimation)
+end
+
+-- Ожидание появления персонажа
+if LocalPlayer.Character then
+    initializeCharacter(LocalPlayer.Character)
+end
+
+LocalPlayer.CharacterAdded:Connect(initializeCharacter)
+LocalPlayer.CharacterRemoving:Connect(function()
+    character = nil
+    humanoid = nil
+    humanoidRootPart = nil
+    torso = nil
+    neck = nil
+    rootJoint = nil
+    rightShoulder = nil
+    animator = nil
+    grabAnimationTrack = nil
+end)
+
+-- Обработчик Look события
+ReplicatedStorage.CharacterEvents.Look.OnClientEvent:Connect(function(player, neckCFrame, rootCFrame, shoulderCFrame, quality)
+    if player == LocalPlayer then return end
+    
+    local targetChar = player.Character
+    if not targetChar then return end
+    
+    local targetTorso = targetChar:WaitForChild("Torso")
+    local targetNeck = targetTorso:WaitForChild("Neck")
+    local targetRootJoint = targetChar:WaitForChild("HumanoidRootPart"):WaitForChild("RootJoint")
+    local targetRightShoulder = targetTorso:WaitForChild("Right Shoulder")
+    
+    local tweenTime = 0.5
+    if quality == "high" then
+        tweenTime = 0.1
+    elseif quality == "medium" then
+        tweenTime = 0.25
+    elseif quality == "low" then
+        tweenTime = 0.5
+    elseif quality == "lowest" then
+        tweenTime = 1
+    end
+    
+    -- Плавное изменение позиций суставов
+    if neckCFrame then
+        TweenService:Create(targetNeck, TweenInfo.new(tweenTime, Enum.EasingStyle.Linear), {C0 = neckCFrame}):Play()
+    end
+    
+    if rootCFrame then
+        TweenService:Create(targetRootJoint, TweenInfo.new(tweenTime, Enum.EasingStyle.Linear), {C0 = rootCFrame}):Play()
+    end
+    
+    if shoulderCFrame and targetRightShoulder then
+        TweenService:Create(targetRightShoulder, TweenInfo.new(tweenTime, Enum.EasingStyle.Linear), {C0 = shoulderCFrame}):Play()
+    end
+end)
+
+-- Создание бесконечного луча захвата
+ReplicatedStorage.GrabEvents.CreateGrabLine.OnClientEvent:Connect(function(player, targetPart, localOffset)
+    if player == LocalPlayer then return end
+    
+    local targetChar = player.Character
+    if not targetChar then return end
+    
+    -- Удаляем старый луч
+    local oldGrabParts = targetChar:FindFirstChild("GrabParts")
+    if oldGrabParts then
+        oldGrabParts:Destroy()
+    end
+    
+    -- Клонируем модель луча
+    local grabParts = ReplicatedFirst:WaitForChild("GrabParts"):Clone()
+    
+    -- Позиция захвата
+    local grabPosition = (targetPart.CFrame * localOffset).Position
+    
+    -- Настраиваем луч как бесконечный
+    local beam = grabParts.BeamPart.GrabBeam
+    
+    -- Убираем ограничения по длине
+    beam.Segments = 2  -- Минимальное количество сегментов для прямой линии
+    beam.Width0 = 0.3
+    beam.Width1 = 0.3
+    
+    -- Используем текстуру для бесконечного луча
+    beam.Texture = "rbxassetid://8933355899"  -- Текстура луча
+    beam.TextureLength = 10  -- Повторение текстуры
+    beam.TextureSpeed = 2    -- Движение текстуры
+    
+    -- Убираем изгиб (делаем луч прямым)
+    beam.CurveSize0 = 0
+    beam.CurveSize1 = 0
+    
+    -- Цвет луча
+    local beamColor = player:WaitForChild("BeamColor", 2)
+    if beamColor then
+        for _, obj in pairs(grabParts:GetDescendants()) do
+            if obj:IsA("BasePart") then
+                obj.Color = beamColor:WaitForChild("BallColorHolder").Value
+            elseif obj:IsA("Beam") then
+                obj.Color = beamColor:WaitForChild("ColorSequenceHolder").Color
+            end
+        end
+    end
+    
+    -- Настройка привязок
+    local dragPart = grabParts.DragPart
+    local grabPart = grabParts.GrabPart
+    local beamPart = grabParts.BeamPart
+    
+    -- Удаляем физические ограничения
+    dragPart.AlignOrientation:Destroy()
+    dragPart.AlignPosition:Destroy()
+    
+    -- Привязываем к голове игрока
+    local head = targetChar:WaitForChild("Head", 2)
+    if head then
+        dragPart.WeldConstraint.Part0 = dragPart
+        dragPart.WeldConstraint.Part1 = head
+        dragPart.Position = head.CFrame.LookVector * 1000 + head.Position  -- Большое расстояние для эффекта бесконечности
+    end
+    
+    -- Настраиваем луч
+    local rightArm = targetChar:FindFirstChild("Right Arm")
+    if rightArm then
+        local rightGrip = rightArm:FindFirstChild("RightGripAttachment")
+        if rightGrip then
+            beam.Attachment0 = rightGrip
+        end
+    end
+    
+    -- Привязываем захватывающую часть к цели
+    grabPart.WeldConstraint.Part1 = targetPart
+    grabPart.Position = grabPosition
+    
+    -- Позиция для BeamPart (середина луча)
+    beamPart.Position = (grabPart.Position + dragPart.Position) / 2
+    
+    -- Звуки
+    grabPart.AttachSound:Play()
+    grabPart.BeamSound:Play()
+    grabPart.BeamSound.Looped = true
+    grabPart.BeamSound.PlaybackSpeed = 1.5
+    
+    -- Родитель
+    grabParts.Parent = targetChar
+    
+    -- Обновление луча каждый кадр для бесконечного эффекта
+    local renderConnection
+    renderConnection = RunService.RenderStepped:Connect(function()
+        if not grabParts or not grabParts.Parent then
+            renderConnection:Disconnect()
+            return
+        end
+        
+        -- Обновляем позицию dragPart перед лицом игрока
+        if head then
+            dragPart.Position = head.CFrame.Position + head.CFrame.LookVector * 10000  -- Огромное расстояние для эффекта бесконечности
+        end
+        
+        -- Делаем луч прямым от руки к бесконечности
+        local startPos = grabPart.Position
+        local endPos = dragPart.Position
+        
+        -- Направляем BeamPart вдоль луча
+        beamPart.CFrame = CFrame.lookAt(startPos, endPos) * CFrame.Angles(math.pi/2, 0, 0)
+        
+        -- Настройка луча
+        beam.Attachment1 = beamPart.Attachment  -- Фиксированная конечная точка
+        
+        -- Эффект бесконечности: изменяем длину текстуры
+        beam.TextureLength = (startPos - endPos).Magnitude / 10
+    end)
+    
+    -- Очистка при удалении
+    grabParts.AncestryChanged:Connect(function()
+        if not grabParts:IsDescendantOf(workspace) then
+            if renderConnection then
+                renderConnection:Disconnect()
+            end
+        end
+    end)
+end)
+
+-- Расширение луча (для бесконечного луча не нужно)
+ReplicatedStorage.GrabEvents.ExtendGrabLine.OnClientEvent:Connect(function(player, distance)
+    if player == LocalPlayer then return end
+    
+    local char = player.Character
+    if not char then return end
+    
+    local grabParts = char:FindFirstChild("GrabParts")
+    if grabParts then
+        local head = char:WaitForChild("Head", 2)
+        if head then
+            -- Для бесконечного луча просто увеличиваем расстояние
+            grabParts.DragPart.Position = head.CFrame.LookVector * (10000 + distance) + head.Position
+        end
+    end
+end)
+
+-- Удаление луча
+ReplicatedStorage.GrabEvents.DestroyGrabLine.OnClientEvent:Connect(function(player)
+    if player == LocalPlayer then return end
+    
+    local char = player.Character
+    if not char then return end
+    
+    local grabParts = char:FindFirstChild("GrabParts")
+    if grabParts then
+        grabParts:Destroy()
+    end
+end)
+
+-- Управление головой и анимацией
+local isGrabbing = false
+script:WaitForChild("GrabNotifyEvent").Event:Connect(function(state)
+    isGrabbing = state
+    
+    if grabAnimationTrack then
+        if state then
+            grabAnimationTrack:Play()
+        else
+            grabAnimationTrack:Stop()
+        end
+    end
+end)
+
+-- Плавное вращение головы за камерой
+RunService.RenderStepped:Connect(function()
+    if not neck or not humanoidRootPart then return end
+    
+    local cameraCFrame = CurrentCamera.CFrame
+    local headLookVector = humanoidRootPart.CFrame:toObjectSpace(cameraCFrame).lookVector
+    
+    -- Поворот головы в сторону камеры
+    neck.C0 = CFrame.new(0, 1.5, 0) * 
+               CFrame.Angles(math.pi/2, 0, math.pi) * 
+               CFrame.Angles(-math.asin(headLookVector.y), 0, 0)
+end)
+
+-- Основной цикл анимации и синхронизации
+spawn(function()
+    local PlayerModule = require(game.Players.LocalPlayer.PlayerScripts:WaitForChild("PlayerModule"))
+    local controls = PlayerModule:GetControls()
+    
+    local rotationAngle = 0
+    local frameCounter = 0
+    
+    while true do
+        wait(0.05)
+        
+        if not neck or not humanoidRootPart or not rootJoint or not rightShoulder then
+            continue
+        end
+        
+        -- Получаем ввод игрока
+        local moveVector = controls:GetMoveVector()
+        local inputX, inputZ = moveVector.X, moveVector.Z
+        
+        -- Вычисляем угол поворота
+        if inputX ~= 0 or inputZ ~= 0 then
+            rotationAngle = math.deg(math.atan2(-inputZ, -inputX)) - 90
+            rotationAngle = -rotationAngle
+            
+            -- Нормализация угла
+            if math.abs(rotationAngle) > 90 then
+                rotationAngle = rotationAngle - 180
+            end
+        else
+            -- Плавное возвращение к нулю
+            if rotationAngle < 0 then
+                rotationAngle = math.min(rotationAngle + 10, 0)
+            elseif rotationAngle > 0 then
+                rotationAngle = math.max(rotationAngle - 10, 0)
+            end
+        end
+        
+        -- Вектор взгляда камеры
+        local cameraLookVector = humanoidRootPart.CFrame:toObjectSpace(CurrentCamera.CFrame).lookVector
+        
+        -- Позиция головы
+        local neckCFrame = CFrame.new(0, 1.5, 0) *
+                          CFrame.Angles(math.pi/2, 0, math.pi) *
+                          CFrame.Angles(-math.asin(cameraLookVector.y), 0, 0) *
+                          CFrame.Angles(0, math.rad(rotationAngle) * cameraLookVector.y * 0.8, 0) *
+                          CFrame.Angles(0, 0, -math.rad(rotationAngle) * (1 - math.abs(cameraLookVector.y)))
+        
+        -- Позиция корпуса
+        local rootCFrame = rootJoint.C0 *
+                          CFrame.Angles(math.pi/2, 0, math.pi) *
+                          CFrame.Angles(0, 0, math.rad(rotationAngle))
+        
+        -- Позиция правой руки
+        local shoulderCFrame = rightShoulder.C0 *
+                              CFrame.Angles(0, math.pi/2, math.pi/2) *
+                              CFrame.Angles(0, 0, math.asin(cameraLookVector.y)) *
+                              CFrame.Angles(-math.rad(rotationAngle) * (1 - math.abs(cameraLookVector.y)), 0, 0)
+        
+        -- Устанавливаем позиции
+        neck.C0 = neckCFrame
+        
+        -- Синхронизация с другими игроками
+        frameCounter = frameCounter + 1
+        if frameCounter >= 20 then
+            frameCounter = 0
+        end
+        
+        -- Отправляем данные о положении
+        ReplicatedStorage.CharacterEvents.Look:FireServer(neckCFrame, rootCFrame, shoulderCFrame, "medium")
+    end
+end)
+]]
+
+local grabing = [[
+-- Script Path: game:GetService("StarterPlayer").StarterCharacterScripts.GrabbingScript
+-- Исправленная версия без ограничения длины
+
+local ContextActionService = game:GetService("ContextActionService")
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local module_upvr_2 = require(Players.LocalPlayer:WaitForChild("PlayerScripts"):WaitForChild("CASButtonModule"))
+
+local LocalPlayer = Players.LocalPlayer
+local ActionEvent = LocalPlayer:WaitForChild("PlayerGui"):WaitForChild("ControlsGui"):WaitForChild("ActionEvent")
+local ExtendGrabLine = ReplicatedStorage.GrabEvents.ExtendGrabLine
+local GrabNotifyEvent = LocalPlayer:WaitForChild("PlayerScripts"):WaitForChild("CharacterAndBeamMove"):WaitForChild("GrabNotifyEvent")
+local CreateGrabLine = ReplicatedStorage.GrabEvents.CreateGrabLine
+local DestroyGrabLine = ReplicatedStorage.GrabEvents.DestroyGrabLine
+
+local Crosshairs = LocalPlayer:WaitForChild("PlayerGui"):WaitForChild("Crosshairs")
+local CrosshairsFrame = Crosshairs:WaitForChild("CrosshairsFrame")
+Crosshairs.Enabled = true
+
+if LocalPlayer.PlayerGui:WaitForChild("MenuGui").Enabled == false then
+    UserInputService.MouseIconEnabled = false
+end
+
+-- Убираем ограничения на дальность захвата
+local MAX_DISTANCE = 10000  -- Очень большое значение вместо 20/30
+local MIN_DISTANCE = 3
+
+-- Переменные состояния
+local isGrabbing = false
+local isRotating = false
+local isZoomingIn = false
+local isZoomingOut = false
+local isDistanceChanging = false
+
+-- Ссылки на объекты
+local Character = LocalPlayer.Character
+local Humanoid = Character:WaitForChild("Humanoid")
+local Head = Character:WaitForChild("Head")
+local HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
+local CurrentCamera = workspace.CurrentCamera
+CurrentCamera.CameraType = Enum.CameraType.Custom
+
+-- Создаем часть для камеры
+local CamPart = Instance.new("Part")
+CamPart.CanQuery = false
+CamPart.CanTouch = false
+CamPart.CanCollide = false
+CamPart.Transparency = 1
+CamPart.Anchored = true
+CamPart.Name = "CamPart"
+CamPart.Parent = Character
+
+Head.AncestryChanged:Connect(function()
+    if Head:IsDescendantOf(workspace) == false then
+        CamPart:Destroy()
+    end
+end)
+
+local CameraAttachment = Instance.new("Attachment")
+CameraAttachment.Parent = CamPart
+CameraAttachment.Position = Vector3.new(0, -2, -1)
+
+RunService.RenderStepped:Connect(function()
+    CamPart.CFrame = CurrentCamera.CFrame
+end)
+
+-- Создаем часть для ориентации
+for _, v in pairs(workspace:GetChildren()) do
+    if v.Name == "RotateOrientPart" then
+        v:Destroy()
+    end
+end
+
+local RotatePart = Instance.new("Part")
+RotatePart.Transparency = 1
+RotatePart.CanCollide = false
+RotatePart.CanTouch = false
+RotatePart.CanQuery = false
+RotatePart.Position = Vector3.new(0, 1000, 0)
+RotatePart.Anchored = true
+RotatePart.Name = "RotateOrientPart"
+RotatePart.Parent = workspace
+
+local PartAttachment = Instance.new("Attachment")
+PartAttachment.Name = "PartOrient"
+PartAttachment.Parent = RotatePart
+PartAttachment.Position = Vector3.new(0, 0, 0)
+
+local function updateCameraOrientation()
+    local _, yRotation, _ = CurrentCamera.CFrame:ToOrientation()
+    RotatePart.Orientation = Vector3.new(RotatePart.Orientation.x, math.deg(yRotation), RotatePart.Orientation.z)
+end
+
+RunService.Stepped:Connect(updateCameraOrientation)
+
+-- Убираем проверку геймпасса - теперь всегда максимальная дальность
+local grabDistance = MIN_DISTANCE
+local grabbedObject = nil
+local grabPartsInstance = nil
+
+-- Функция завершения захвата
+local function endGrab(reason)
+    isGrabbing = false
+    CrosshairsFrame.Size = UDim2.new(0, 11, 0, 11)
+    GrabNotifyEvent:Fire(false)
+    module_upvr_2.ChangeColor("Grab")
+    
+    if grabPartsInstance then
+        ContextActionService:UnbindAction("Throw")
+        ContextActionService:UnbindAction("ZoomIn")
+        ContextActionService:UnbindAction("ZoomOut")
+        ContextActionService:UnbindAction("ZoomPC")
+        ContextActionService:UnbindAction("Rotate")
+        
+        isRotating = false
+        ActionEvent:Fire("GrabbingControls", false)
+        ActionEvent:Fire("GrabControls", false)
+        ActionEvent:Fire("RotatingControls", false)
+        ActionEvent:Fire("RotateControls", false)
+        
+        CurrentCamera.CameraType = Enum.CameraType.Custom
+        RunService:UnbindFromRenderStep("dragBinding")
+        RunService:UnbindFromRenderStep("buttonDistanceMoving")
+        
+        isZoomingIn = false
+        isZoomingOut = false
+        
+        grabPartsInstance:Destroy()
+        DestroyGrabLine:FireServer(grabbedObject)
+        
+        grabbedObject = nil
+        grabPartsInstance = nil
+    end
+end
+
+-- Изменение расстояния через кнопки
+local function distanceChangeButtonMoving()
+    if not isDistanceChanging then
+        isDistanceChanging = true
+        
+        if isZoomingIn and not isZoomingOut then
+            if grabDistance > MIN_DISTANCE then
+                grabDistance = math.floor(grabDistance - 1)
+                ExtendGrabLine:FireServer(grabDistance)
+            end
+        elseif not isZoomingIn and isZoomingOut then
+            -- Убираем верхнее ограничение
+            if grabDistance < 10000 then  -- Большое значение вместо MAX_DISTANCE
+                grabDistance = math.ceil(grabDistance + 1)
+                ExtendGrabLine:FireServer(grabDistance)
+            end
+        end
+        
+        isDistanceChanging = false
+    end
+end
+
+-- Перетаскивание объекта
+local function dragUpdate()
+    if isGrabbing and grabPartsInstance and grabbedObject then
+        grabPartsInstance.DragPart.Position = CurrentCamera.CFrame.LookVector * grabDistance + CurrentCamera.CFrame.Position
+        grabPartsInstance.DragPart.DragAttach.WorldOrientation = PartAttachment.WorldOrientation
+        
+        grabPartsInstance.BeamPart.CFrame = CFrame.lookAt(
+            grabPartsInstance.GrabPart.Position,
+            grabPartsInstance.DragPart.Position,
+            Vector3.new(0, 0, 1)
+        )
+        
+        local distance = (grabPartsInstance.GrabPart.Position - grabPartsInstance.DragPart.Position).Magnitude
+        local curveSize = distance * 1.5
+        
+        grabPartsInstance.BeamPart.GrabBeam.CurveSize1 = curveSize
+        grabPartsInstance.GrabPart.BeamSound.PlaybackSpeed = curveSize / 2 + 2.5
+        
+        if not grabbedObject:IsDescendantOf(workspace) then
+            endGrab("Throw")
+        end
+    end
+end
+
+-- Бросок объекта
+local function throwObject(actionName, inputState)
+    if inputState == Enum.UserInputState.Begin then
+        if actionName == "Throw" and isGrabbing then
+            endGrab(actionName)
+            
+            if grabbedObject and grabbedObject.Anchored == false then
+                local velocityMultiplier = 750
+                if grabbedObject.Parent:IsA("Model") and grabbedObject.Parent.Name ~= "Workspace" then
+                    local totalMass = 0
+                    for _, part in pairs(grabbedObject.Parent:GetChildren()) do
+                        if part:IsA("BasePart") then
+                            totalMass = totalMass + part.Mass
+                        end
+                    end
+                    
+                    local throwVelocity = CurrentCamera.CFrame.LookVector * (velocityMultiplier / math.max(totalMass, 1)) + 
+                                         CurrentCamera.CFrame.LookVector * 15
+                    
+                    if throwVelocity.Magnitude > 100 then
+                        throwVelocity = CurrentCamera.CFrame.LookVector * 100
+                    end
+                    
+                    for _, part in pairs(grabbedObject.Parent:GetChildren()) do
+                        if part:IsA("BasePart") then
+                            part.Velocity = throwVelocity
+                        end
+                    end
+                else
+                    local throwVelocity = CurrentCamera.CFrame.LookVector * (velocityMultiplier / math.max(grabbedObject.Mass, 1)) + 
+                                         CurrentCamera.CFrame.LookVector * 15
+                    
+                    if throwVelocity.Magnitude > 100 then
+                        throwVelocity = CurrentCamera.CFrame.LookVector * 100
+                    end
+                    
+                    grabbedObject.Velocity = throwVelocity
+                end
+            end
+        end
+    end
+end
+
+-- Позиционирование камеры для вращения
+local lastCameraOffset
+
+local function positionCameraForRotation()
+    if UserInputService.MouseBehavior ~= Enum.MouseBehavior.LockCenter then
+        UserInputService.MouseBehavior = Enum.MouseBehavior.LockCenter
+    end
+    
+    if CurrentCamera.CameraType ~= Enum.CameraType.Scriptable then
+        CurrentCamera.CameraType = Enum.CameraType.Scriptable
+    end
+    
+    for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
+        if part:IsA("BasePart") then
+            part.Transparency = 1
+        end
+    end
+    
+    CurrentCamera.CFrame = CFrame.new(HumanoidRootPart.CFrame * lastCameraOffset) * CurrentCamera.CFrame.Rotation
+    
+    if not isGrabbing then
+        RunService:UnbindFromRenderStep("camBinding")
+        CurrentCamera.CameraType = Enum.CameraType.Custom
+        UserInputService.MouseBehavior = Enum.MouseBehavior.Default
+        isRotating = false
+    end
+end
+
+-- Вращение объекта
+local function rotateObject(actionName, inputState, inputObject, gameProcessedEvent)
+    if isGrabbing then
+        if actionName == "Rotate" and inputState == Enum.UserInputState.Begin then
+            if not isRotating then
+                lastCameraOffset = HumanoidRootPart.CFrame:ToObjectSpace(CurrentCamera.CFrame).Position
+                CurrentCamera.CameraType = Enum.CameraType.Scriptable
+                UserInputService.MouseBehavior = Enum.MouseBehavior.LockCenter
+                RunService:BindToRenderStep("camBinding", Enum.RenderPriority.Camera.Value - 1, positionCameraForRotation)
+                isRotating = true
+                ActionEvent:Fire("RotatingControls", true)
+                ActionEvent:Fire("RotateControls", false)
+                module_upvr_2.ChangeColor("Rotate", Color3.new(0, 1, 1))
+            else
+                CurrentCamera.CameraType = Enum.CameraType.Custom
+                UserInputService.MouseBehavior = Enum.MouseBehavior.Default
+                RunService:UnbindFromRenderStep("camBinding")
+                isRotating = false
+                module_upvr_2.ChangeColor("Rotate")
+                ActionEvent:Fire("RotatingControls", false)
+                ActionEvent:Fire("RotateControls", true)
+            end
+        end
+        
+        if actionName == "rotateMove" and isRotating and not gameProcessedEvent and 
+           inputObject.KeyCode ~= Enum.KeyCode.Thumbstick2 then
+            local tempPart = RotatePart:Clone()
+            tempPart.Anchored = true
+            tempPart.Orientation = Vector3.new(
+                tempPart.Orientation.X + inputObject.Delta.Y,
+                tempPart.Orientation.Y + inputObject.Delta.X,
+                tempPart.Orientation.Z
+            )
+            PartAttachment.WorldOrientation = tempPart:WaitForChild("PartOrient").WorldOrientation
+            tempPart:Destroy()
+        end
+    end
+end
+
+UserInputService.InputChanged:Connect(function(input, gameProcessedEvent)
+    if isGrabbing then
+        if input.UserInputType == Enum.UserInputType.MouseMovement or 
+           input.UserInputType == Enum.UserInputType.Touch then
+            rotateObject("rotateMove", "arbitraryString", input, gameProcessedEvent)
+        end
+    end
+end)
+
+-- Изменение расстояния скроллингом
+local function distanceChangeScrolling(actionName, inputState, inputObject)
+    if isGrabbing then
+        if inputObject.Position.Z < 0 then
+            local newDistance = math.ceil(grabDistance + inputObject.Position.Z * 2)
+            if newDistance < MIN_DISTANCE then
+                grabDistance = MIN_DISTANCE
+            else
+                grabDistance = newDistance
+            end
+            ExtendGrabLine:FireServer(grabDistance)
+        elseif inputObject.Position.Z > 0 then
+            local newDistance = math.floor(grabDistance + inputObject.Position.Z * 2)
+            -- Убираем верхнее ограничение
+            if newDistance > 10000 then  -- Большое значение вместо MAX_DISTANCE
+                grabDistance = 10000
+            else
+                grabDistance = newDistance
+            end
+            ExtendGrabLine:FireServer(grabDistance)
+        end
+    end
+end
+
+-- Изменение расстояния кнопками
+local function distanceChangeButtonToggle(actionName, inputState)
+    if inputState == Enum.UserInputState.Begin then
+        if actionName == "ZoomOut" then
+            isZoomingOut = true
+            isZoomingIn = false
+        elseif actionName == "ZoomIn" then
+            isZoomingIn = true
+            isZoomingOut = false
+        end
+    elseif inputState == Enum.UserInputState.End or inputState == Enum.UserInputState.Cancel then
+        if actionName == "ZoomOut" then
+            isZoomingOut = false
+            isZoomingIn = false
+        elseif actionName == "ZoomIn" then
+            isZoomingIn = false
+            isZoomingOut = false
+        end
+    end
+end
+
+-- События
+ReplicatedStorage.GrabEvents.EndGrabEarly.OnClientEvent:Connect(function()
+    if isGrabbing then
+        isGrabbing = false
+        if grabPartsInstance then
+            endGrab("Throw")
+        end
+    end
+end)
+
+Humanoid.Died:Connect(function()
+    endGrab("Throw")
+end)
+
+local isLowQuality = false
+script.LowQualityMode.Event:Connect(function()
+    isLowQuality = true
+end)
+
+local GrabPartsModel = game:GetService("ReplicatedFirst"):WaitForChild("GrabParts")
+local SetNetworkOwner = ReplicatedStorage.GrabEvents.SetNetworkOwner
+
+-- Основная функция захвата
+local raycastTarget, raycastOffset
+local isHoldingButton = false
+
+local function grabObject(actionName, inputState)
+    if actionName == "Grab" and inputState == Enum.UserInputState.Begin and Humanoid.Health > 0 then
+        if isGrabbing then
+            endGrab(actionName)
+            return
+        end
+        
+        if raycastTarget then
+            CrosshairsFrame.Size = UDim2.new(0, 7, 0, 7)
+            local grabPosition = (raycastTarget.CFrame * raycastOffset).Position
+            
+            ContextActionService:UnbindAction("Hold")
+            isHoldingButton = false
+            isGrabbing = true
+            
+            GrabNotifyEvent:Fire(true)
+            module_upvr_2.ChangeColor("Grab", Color3.new(0, 1, 1))
+            module_upvr_2.PlaceButton("Throw", throwObject)
+            module_upvr_2.PlaceButton("ZoomIn", distanceChangeButtonToggle)
+            module_upvr_2.PlaceButton("ZoomOut", distanceChangeButtonToggle)
+            module_upvr_2.PlaceButton("ZoomPC", distanceChangeScrolling)
+            module_upvr_2.PlaceButton("Rotate", rotateObject)
+            
+            ActionEvent:Fire("HoldControls", false)
+            ActionEvent:Fire("GrabbingControls", true)
+            ActionEvent:Fire("GrabControls", false)
+            
+            grabDistance = (grabPosition - CurrentCamera.CFrame.Position).Magnitude
+            
+            -- Убираем ограничения на максимальную дистанцию
+            if grabDistance < MIN_DISTANCE then
+                grabDistance = MIN_DISTANCE
+            end
+            
+            grabbedObject = raycastTarget
+            grabPartsInstance = GrabPartsModel:Clone()
+            
+            if isLowQuality then
+                grabPartsInstance.GrabPart.LowQualityGrabPartBall.Transparency = 0
+                grabPartsInstance.GrabPart.Transparency = 1
+                grabPartsInstance.BeamPart.GrabBeam.Segments = 30
+            end
+            
+            grabPartsInstance.DragPart.Position = CurrentCamera.CFrame.LookVector * grabDistance + CurrentCamera.CFrame.Position
+            CreateGrabLine:FireServer(raycastTarget, raycastOffset)
+            ExtendGrabLine:FireServer(grabDistance)
+            
+            local BeamColor = LocalPlayer:WaitForChild("BeamColor")
+            local FartherReach = LocalPlayer:FindFirstChild("FartherReach")
+            
+            if FartherReach and FartherReach.Value == true then
+                grabPartsInstance.BeamPart.GrabBeam.Texture = "rbxassetid://8933355899"
+            end
+            
+            for _, obj in pairs(grabPartsInstance:GetDescendants()) do
+                if obj:IsA("BasePart") then
+                    obj.Color = BeamColor:WaitForChild("BallColorHolder").Value
+                elseif obj:IsA("Beam") then
+                    obj.Color = BeamColor:WaitForChild("ColorSequenceHolder").Color
+                end
+            end
+            
+            if raycastTarget.Anchored == false then
+                raycastTarget.AssemblyLinearVelocity = Head.AssemblyLinearVelocity
+                raycastTarget.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+            end
+            
+            grabPartsInstance.DragPart.Anchored = true
+            grabPartsInstance.GrabPart.GrabAttach.Orientation = PartAttachment.WorldOrientation
+            grabPartsInstance.DragPart.DragAttach.WorldOrientation = PartAttachment.WorldOrientation
+            grabPartsInstance.GrabPart.WeldConstraint.Part1 = raycastTarget
+            grabPartsInstance.GrabPart.Position = grabPosition
+            grabPartsInstance.GrabPart.Anchored = false
+            grabPartsInstance.BeamPart.Anchored = true
+            grabPartsInstance.BeamPart.GrabBeam.Attachment0 = CameraAttachment
+            grabPartsInstance.Parent = workspace
+            
+            SetNetworkOwner:FireServer(raycastTarget, CurrentCamera.CFrame)
+            
+            isDistanceChanging = false
+            RunService:BindToRenderStep("dragBinding", Enum.RenderPriority.First.Value, dragUpdate)
+            RunService:BindToRenderStep("buttonDistanceMoving", Enum.RenderPriority.First.Value, distanceChangeButtonMoving)
+            
+            grabPartsInstance.GrabPart.AttachSound:Play()
+            wait()
+            
+            if grabPartsInstance:FindFirstChild("GrabPart") then
+                grabPartsInstance.GrabPart.BeamSound:Play()
+            end
+        end
+    end
+end
+
+-- Режим удержания объектов (оставляем без изменений)
+local holdingItem = nil
+local fakeHoldingItem = nil
+-- ... остальной код режима удержания ...
+
+module_upvr_2.PlaceButton("Grab", grabObject)
+
+-- Raycast для определения объектов
+local raycastModule = require(LocalPlayer:WaitForChild("PlayerScripts"):WaitForChild("RaycastModule"))
+local canGrab = true
+local isMobileVisible = true
+
+game:GetService("RunService").Stepped:Connect(function()
+    if isGrabbing or not canGrab or not isMobileVisible or holdingItem then
+        return
+    end
+    
+    local rayResult = raycastModule.Raycast(LocalPlayer, MAX_DISTANCE)
+    
+    if rayResult then
+        raycastTarget = rayResult.Instance
+        raycastOffset = rayResult.Offset
+        
+        if not isHoldingButton then
+            isHoldingButton = true
+            ContextActionService:BindAction("Hold", grabObject, false, Enum.KeyCode.ButtonR2)
+            ActionEvent:Fire("HoldControls", true)
+            module_upvr_2.PlaceButton("Grab", grabObject)
+            ActionEvent:Fire("GrabControls", true)
+        end
+    else
+        if isHoldingButton then
+            isHoldingButton = false
+            ContextActionService:UnbindAction("Hold")
+            ActionEvent:Fire("HoldControls", false)
+            module_upvr_2.PlaceButton("Grab", grabObject)
+            ActionEvent:Fire("GrabControls", true)
+            raycastTarget = nil
+        end
+    end
+end)
+
+-- Переключение видимости кнопок
+script:WaitForChild("ToggleMobileButtonVisibility").Event:Connect(function(isVisible)
+    if isVisible == false then
+        isMobileVisible = false
+        ActionEvent:Fire("RotatingControls", false)
+        ActionEvent:Fire("RotateControls", false)
+        ActionEvent:Fire("GrabbingControls", false)
+        ActionEvent:Fire("GrabControls", false)
+        ActionEvent:Fire("HoldControls", false)
+        ActionEvent:Fire("HoldingControls", false)
+        
+        if holdingItem then
+            -- dropItem() - если есть функция сброса предмета
+        end
+        
+        endGrab("Throw")
+        
+        ContextActionService:UnbindAction("Grab")
+        ContextActionService:UnbindAction("Throw")
+        ContextActionService:UnbindAction("ZoomPC")
+        ContextActionService:UnbindAction("ZoomIn")
+        ContextActionService:UnbindAction("ZoomOut")
+        ContextActionService:UnbindAction("Rotate")
+        ContextActionService:UnbindAction("Hold")
+        ContextActionService:UnbindAction("HoldUse")
+        ContextActionService:UnbindAction("HoldDrop")
+        
+        isHoldingButton = false
+        canGrab = false
+    else
+        module_upvr_2.PlaceButton("Grab", grabObject)
+        ActionEvent:Fire("GrabControls", true)
+        canGrab = true
+        isMobileVisible = true
+    end
+end)
+]]
+
+game:GetService("StarterPlayer").StarterCharacterScripts.GrabbingScript.Source = grabing
+game:GetService("Players").LocalPlayer.PlayerScripts.CharacterAndBeamMove.Source = CharacterAndBeamMove
