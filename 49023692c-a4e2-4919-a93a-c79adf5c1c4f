@@ -141,7 +141,7 @@ local function antiBomb()
                                     ["Model"] = bomb,
                                     ["ExplodesByPointy"] = true,
                                     ["ImpactSpeed"] = 9999,
-                                    ["PositionPart"] = bomb.PartHitDetector
+                                    ["PositionPart"] = workspace.Map.TrainTunnel.Mountain1.Rock
                                 },
                                 [2] = Vector3.new(0, 0, 0)
                             }
