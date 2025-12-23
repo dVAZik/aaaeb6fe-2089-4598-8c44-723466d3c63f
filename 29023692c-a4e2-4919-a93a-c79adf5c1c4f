@@ -3,7 +3,7 @@ local player = game:GetService('Players').LocalPlayer
 
 local hub = lib.Hub('🏀Fling Things and People')
 local fat = hub.Section('💍')
-local all = hub.Section('🩸ALL1')
+local all = hub.Section('🩸ALL231')
 
 local function CheckItem(name)
     local toysFolder = workspace:FindFirstChild(player.Name.."SpawnedInToys")
@@ -107,7 +107,7 @@ local function antiGrab()
             local grabParts = plr.Character.GrabParts
             local getGrab = grabParts.GrabPart.WeldConstraint.Part1
             if getGrab.Parent:FindFirstChildOfClass('Humanoid') then 
-                local currentPlr = game:GetService('Players'):GetPlayerFromCharacter(getGrab)
+                local currentPlr = game:GetService('Players'):GetPlayerFromCharacter(getGrab.Parent)
                 if currentPlr then 
                     last = player.Character:GetPivot()
                     task.wait()
