@@ -3,7 +3,7 @@ local player = game:GetService('Players').LocalPlayer
 
 local hub = lib.Hub('🏀Fling Things and People')
 local fat = hub.Section('💍')
-local all = hub.Section('🩸ALL11')
+local all = hub.Section('🩸ALL')
 
 local function checkDistance(pos1, pos2)
     if type(pos1) == 'vector' and type(pos2) == 'vector' then
@@ -111,7 +111,7 @@ end
 
 local function antiBomb()
     if not player.Character then return end
-    local getItems = getList('BombMissile')
+    local getItems = findItems('BombMissile')
     if #getItems == 0 then return end
     for _, plr in pairs(game:GetService('Players'):GetPlayers()) do
         if plr.Character and plr.Character:FindFirstChild('HumanoidRootPart') then 
