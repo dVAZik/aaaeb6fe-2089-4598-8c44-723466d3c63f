@@ -3,7 +3,7 @@ local player = game:GetService('Players').LocalPlayer
 
 local hub = lib.Hub('🏀Fling Things and People')
 local fat = hub.Section('💍')
-local all = hub.Section('🩸AааL')
+local all = hub.Section('🩸ALL')
 
 local function checkDistance(pos1, pos2)
     if type(pos1) == 'vector' and type(pos2) == 'vector' then
@@ -135,13 +135,13 @@ local function antiBomb()
                                     ["Radius"] = 9999,
                                     ["TimeLength"] = 9999,
                                     ["Hitbox"] = bomb.PartHitDetector,
-                                    ["ExplodesByFire"] = false,
+                                    ["ExplodesByFire"] = true,
                                     ["MaxForcePerStudSquared"] = 9999,
-                                    ["DestroysModel"] = false,
+                                    ["DestroysModel"] = true,
                                     ["Model"] = bomb,
                                     ["ExplodesByPointy"] = true,
                                     ["ImpactSpeed"] = 9999,
-                                    ["PositionPart"] = workspace
+                                    ["PositionPart"] = bomb.PartHitDetector
                                 },
                                 [2] = Vector3.new(0, 0, 0)
                             }
