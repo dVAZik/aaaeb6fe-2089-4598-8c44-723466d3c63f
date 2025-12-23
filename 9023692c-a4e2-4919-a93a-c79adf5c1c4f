@@ -3,7 +3,7 @@ local player = game:GetService('Players').LocalPlayer
 
 local hub = lib.Hub('🏀Fling Things and People')
 local fat = hub.Section('💍')
-local all = hub.Section('🩸ALL231')
+local all = hub.Section('🩸ALL')
 
 local function CheckItem(name)
     local toysFolder = workspace:FindFirstChild(player.Name.."SpawnedInToys")
@@ -112,11 +112,11 @@ local function antiGrab()
                     last = player.Character:GetPivot()
                     task.wait()
                     while grabParts and grabParts.Parent do
-                        if not CheckOwn(plr.Character) then
-                            player.Character:MoveTo(plr.Character:GetPivot().Position)
+                        if not CheckOwn(currentPlr.Character) then
+                            player.Character:MoveTo(currentPlr.Character:GetPivot().Position)
                             local args = {
-                                [1] = plr.Character.HumanoidRootPart,
-                                [2] = plr.Character.HumanoidRootPart.CFrame
+                                [1] = currentPlr.Character.HumanoidRootPart,
+                                [2] = currentPlr.Character.HumanoidRootPart.CFrame
                             }
 
                             game:GetService("ReplicatedStorage").GrabEvents.SetNetworkOwner:FireServer(unpack(args))
@@ -125,11 +125,11 @@ local function antiGrab()
                         end
                         task.wait()
                     end
-                    plr.Character:MoveTo(Vector3.new(81, 325, 32.5))
+                    currentPlr.Character:MoveTo(Vector3.new(81, 325, 32.5))
                     player.Character:MoveTo(last.Position)
                     task.wait()
                     local args = {
-                        [1] = plr.Character.HumanoidRootPart
+                        [1] = currentPlr.Character.HumanoidRootPart
                     }
 
                     game:GetService("ReplicatedStorage").GrabEvents.DestroyGrabLine:FireServer(unpack(args))
