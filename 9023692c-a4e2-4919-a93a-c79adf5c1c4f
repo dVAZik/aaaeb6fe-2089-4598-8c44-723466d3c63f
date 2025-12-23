@@ -3,7 +3,7 @@ local player = game:GetService('Players').LocalPlayer
 
 local hub = lib.Hub('🏀Fling Things and People')
 local fat = hub.Section('💍')
-local all = hub.Section('🩸ALL1')
+local all = hub.Section('🩸ALL34')
 
 local function CheckItem(name)
     local toysFolder = workspace:FindFirstChild(player.Name.."SpawnedInToys")
@@ -102,12 +102,12 @@ end
 local function antiGrab()
     if not player.Character then return end
 
-    for _, plr in pairs(game:GetService('Player'):GetPlayers()) do 
+    for _, plr in pairs(game:GetService('Players'):GetPlayers()) do 
         if plr ~= player and plr.Character and plr.Character:FindFirstChild('GrabParts') then 
             local grabParts = plr.Character.GrabParts
             local getGrab = grabParts.GrabPart.WeldConstraint.Part1
             if getGrab.Parent:FindFirstChildOfClass('Humanoid') then 
-                local currentPlr = game:GetService('Player'):GetPlayerFromCharacter(getGrab)
+                local currentPlr = game:GetService('Players'):GetPlayerFromCharacter(getGrab)
                 if currentPlr then 
                     last = player.Character:GetPivot()
                     task.wait()
@@ -230,7 +230,7 @@ all.Toggle("Анти-граб", function(state)
                 antiGrab()
             end)    
             if not success then
-                warn("Ошибка в CheckFire:", errorMsg)
+                warn("Ошибка в antiGrab:", errorMsg)
             end
             isCheckingFire = false
         end
