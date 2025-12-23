@@ -225,7 +225,6 @@ local function checkFire()
                             game:GetService("ReplicatedStorage").MenuToys.DestroyToy:FireServer(unpack(args))
                         end
                     end
-                    antiFire:MoveTo(Vector3.new(555, -7.5, -58))
                 else
                     local args = {
                         [1] = "FireExtinguisher",
