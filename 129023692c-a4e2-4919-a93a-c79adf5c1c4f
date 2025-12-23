@@ -37,10 +37,10 @@ local function CheckOwn(model)
 end
 
 local function findItems(name)
-    local names = {name}
+    local names = {}
     local getList = {}
     for _, item in pairs(workspace:GetDescendants()) do 
-        if item:IsA('Model') and table.find(names, item.Name) then
+        if item:IsA('Model') and item.Name == name then
             table.insert(getList, item)
         end
     end
@@ -112,12 +112,12 @@ end
 
 local function antiBomb()
     if not player.Character then return end
-    local getItems = findItems('BombMissile', 'BombDarkMatter', 'BombBalloon')
+    local getItems = findItems('BombMissile')
     if #getItems == 0 then return end
     for _, plr in pairs(game:GetService('Players'):GetPlayers()) do
         if plr.Character and plr.Character:FindFirstChild('HumanoidRootPart') then 
             for _, bomb in pairs(getItems) do 
-                local distance = checkDistance(plr.Character.HumanoidRootPart.Position, bomb:FindFirstChildOfClass('Part').Position or bomb:FindFirstChildOfClass('BasePart').Position)
+                local distance = checkDistance(plr.Character.HumanoidRootPart.Position, bomb:GetPivot().Position)
                 if distance < 25 then
                     last = player.Character:GetPivot()
                     task.wait()
@@ -125,8 +125,8 @@ local function antiBomb()
                         if not CheckOwn(bomb) then
                             player.Character:MoveTo(bomb:GetPivot().Position)
                             local args = {
-                                [1] = bomb:FindFirstChildOfClass('Part') or bomb:FindFirstChildOfClass('BasePart'),
-                                [2] = bomb:GetPivot()
+                                [1] = bomb.Body,
+                                [2] = bomb.Body.CFrame
                             }
 
                             game:GetService("ReplicatedStorage").GrabEvents.SetNetworkOwner:FireServer(unpack(args))
@@ -135,7 +135,7 @@ local function antiBomb()
                                 [1] = {
                                     ["Radius"] = 9999,
                                     ["TimeLength"] = 9999,
-                                    ["Hitbox"] = bomb:FindFirstChildOfClass('Part') or bomb:FindFirstChildOfClass('BasePart'),
+                                    ["Hitbox"] = bomb.PartHitDetector,
                                     ["ExplodesByFire"] = true,
                                     ["MaxForcePerStudSquared"] = 9999,
                                     ["DestroysModel"] = true,
