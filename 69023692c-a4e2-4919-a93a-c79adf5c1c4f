@@ -3,7 +3,7 @@ local player = game:GetService('Players').LocalPlayer
 
 local hub = lib.Hub('🏀Fling Things and People')
 local fat = hub.Section('💍')
-local all = hub.Section('🩸ALLшс')
+local all = hub.Section('🩸ALL')
 
 local function checkDistance(pos1, pos2)
     if type(pos1) == 'vector' and type(pos2) == 'vector' then
@@ -37,9 +37,10 @@ local function CheckOwn(model)
 end
 
 local function findItems(name)
+    local names = {}
     local getList = {}
     for _, item in pairs(workspace:GetDescendants()) do 
-        if item:IsA('Model') and item.Name == name then
+        if item:IsA('Model') and table.find(names, item.Name) then
             table.insert(getList, item)
         end
     end
@@ -111,7 +112,7 @@ end
 
 local function antiBomb()
     if not player.Character then return end
-    local getItems = findItems('BombMissile')
+    local getItems = findItems('BombMissile', 'BombDarkMatter', 'BombBalloon')
     if #getItems == 0 then return end
     for _, plr in pairs(game:GetService('Players'):GetPlayers()) do
         if plr.Character and plr.Character:FindFirstChild('HumanoidRootPart') then 
