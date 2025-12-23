@@ -135,7 +135,7 @@ local function antiBomb()
                                 [1] = {
                                     ["Radius"] = 9999,
                                     ["TimeLength"] = 9999,
-                                    ["Hitbox"] = bomb.PartHitDetector,
+                                    ["Hitbox"] = bomb:FindFirstChildOfClass('BasePart'),
                                     ["ExplodesByFire"] = true,
                                     ["MaxForcePerStudSquared"] = 9999,
                                     ["DestroysModel"] = true,
