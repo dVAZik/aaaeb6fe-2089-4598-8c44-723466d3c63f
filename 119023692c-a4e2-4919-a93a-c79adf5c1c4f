@@ -125,7 +125,7 @@ local function antiBomb()
                         if not CheckOwn(bomb) then
                             player.Character:MoveTo(bomb:GetPivot().Position)
                             local args = {
-                                [1] = bomb:FindFirstChildOfClass('BasePart'),
+                                [1] = bomb:FindFirstChildOfClass('Part') or bomb:FindFirstChildOfClass('BasePart'),
                                 [2] = bomb:GetPivot()
                             }
 
@@ -135,7 +135,7 @@ local function antiBomb()
                                 [1] = {
                                     ["Radius"] = 9999,
                                     ["TimeLength"] = 9999,
-                                    ["Hitbox"] = bomb:FindFirstChildOfClass('BasePart'),
+                                    ["Hitbox"] = bomb:FindFirstChildOfClass('Part') or bomb:FindFirstChildOfClass('BasePart'),
                                     ["ExplodesByFire"] = true,
                                     ["MaxForcePerStudSquared"] = 9999,
                                     ["DestroysModel"] = true,
