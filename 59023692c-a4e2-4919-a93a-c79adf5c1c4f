@@ -3,7 +3,7 @@ local player = game:GetService('Players').LocalPlayer
 
 local hub = lib.Hub('🏀Fling Things and People')
 local fat = hub.Section('💍')
-local all = hub.Section('🩸ALL')
+local all = hub.Section('🩸ALLшс')
 
 local function checkDistance(pos1, pos2)
     if type(pos1) == 'vector' and type(pos2) == 'vector' then
@@ -259,6 +259,7 @@ all.Toggle("Анти-поджёг", function(state)
             if not success then
                 warn("Ошибка в isFire:", errorMsg)
             end
+            task.wait(0.01)
             isFire = false
         end
     end)
@@ -275,6 +276,7 @@ all.Toggle("Анти-отравление", function(state)
             if not success then
                 warn("Ошибка в isHole:", errorMsg)
             end
+            task.wait(0.01)
             isHole = false
         end
     end)
@@ -291,6 +293,7 @@ all.Toggle("Анти-граб", function(state)
             if not success then
                 warn("Ошибка в isGrab:", errorMsg)
             end
+            task.wait(0.02)
             isGrab = false
         end
     end)
@@ -307,6 +310,7 @@ all.Toggle("Анти-бомба", function(state)
             if not success then
                 warn("Ошибка в isBomb:", errorMsg)
             end
+            task.wait(0.05)
             isBomb = false
         end
     end)
