@@ -117,7 +117,7 @@ local function antiBomb()
     for _, plr in pairs(game:GetService('Players'):GetPlayers()) do
         if plr.Character and plr.Character:FindFirstChild('HumanoidRootPart') then 
             for _, bomb in pairs(getItems) do 
-                local distance = checkDistance(plr.Character.HumanoidRootPart.Position, bomb:GetPivot().Position)
+                local distance = checkDistance(plr.Character.HumanoidRootPart.Position, bomb:FindFirstChildOfClass('Part').Position or bomb:FindFirstChildOfClass('BasePart').Position)
                 if distance < 25 then
                     last = player.Character:GetPivot()
                     task.wait()
