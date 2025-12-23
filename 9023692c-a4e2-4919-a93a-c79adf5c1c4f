@@ -1,0 +1,178 @@
+local lib = loadstring(game:HttpGet("https://raw.githubusercontent.com/Timka-q1t-1/Test/refs/heads/main/Library2"))()
+local player = game:GetService('Players').LocalPlayer
+
+local hub = lib.Hub('🏀Fling Things and People')
+local fat = hub.Section('💍')
+local all = hub.Section('🩸ALL')
+
+local function CheckItem(name)
+    local toysFolder = workspace:FindFirstChild(player.Name.."SpawnedInToys")
+    if not toysFolder then return false end
+    
+    for _, item in pairs(toysFolder:GetChildren()) do
+        if item.Name == name then
+            return item
+        end
+    end
+    return false
+end
+
+local function CheckOwn(model)
+    if model and model.Parent then
+        for _, own in pairs(model:GetDescendants()) do
+            if own:IsA("StringValue") and own.Name == "PartOwner" and own.Value == player.Name then
+                return true
+            end
+        end
+    end
+    return false
+end
+
+local holes = {}
+local initHoles = false
+local function getHoles() 
+    if #holes > 0 and initHoles then return holes end
+    local map = workspace:FindFirstChild('Map')
+
+    if map then
+        for _, hole in pairs(map:GetDescendants()) do
+            if hole:IsA('Part') and hole.Name == 'PoisonHurtPart' then
+                table.insert(holes, hole)
+            end
+        end
+        initHoles = true
+    end
+    return holes
+end
+
+local function checkDistance(pos1, pos2)
+    if type(pos1) == 'vector' and type(pos2) == 'vector' then
+        return (pos1 - pos2).Magnitude
+        else
+            return math.huge
+    end
+end
+
+local function checkHole()
+    if not player.Character then return end
+
+    local currentHoles = getHoles()
+    if #currentHoles == 0 then
+        task.delay(5, function()
+            holesInitialized = false
+        end)
+        return
+    end
+
+    for _, plr in pairs(game:GetService('Players'):GetPlayers()) do
+        if plr ~= player and plr.Character and plr.Character:FindFirstChild('HumanoidRootPart') then 
+            for _, hole in pairs(currentHoles) do
+                if checkDistance(plr.Character:FindFirstChild('HumanoidRootPart').Position, hole.Position) < 45 then
+                    last = player.Character:GetPivot()
+                    player.Character:MoveTo(plr.Character:GetPivot().Position)
+                    task.wait()
+                    while CheckOwn(plr.Character) do
+                        local args = {
+                            [1] = plr.Character.HumanoidRootPart,
+                            [2] = plr.Character.HumanoidRootPart.CFrame
+                        }
+
+                        game:GetService("ReplicatedStorage").GrabEvents.SetNetworkOwner:FireServer(unpack(args))
+                        task.wait()
+                    end
+                    plr.Character:MoveTo(Vector3.new(22, -5.5, 12.5))
+                    player.Character:MoveTo(last.Position)
+                    task.wait()
+                    local args = {
+                        [1] = plr.Character.HumanoidRootPart
+                    }
+
+                    game:GetService("ReplicatedStorage").GrabEvents.DestroyGrabLine:FireServer(unpack(args))
+                    break
+                end
+            end
+        end
+    end
+end
+
+local function checkFire()
+    if not player.Character then return end
+    
+    for _, plr in pairs(game:GetService("Players"):GetPlayers()) do
+        if plr.Character and plr.Character:FindFirstChild('HumanoidRootPart') then
+            local hum = plr.Character:FindFirstChild("Humanoid")
+            if hum and hum.FireDebounce.Value then
+                local antiFire = CheckItem("FireExtinguisher")
+                
+                if antiFire then
+                    if CheckOwn(antiFire) then
+                        antiFire:MoveTo(plr.Character:GetPivot().Position)
+                    else
+                        local distance = (antiFire:GetPivot().Position - player.Character:GetPivot().Position).Magnitude
+                        if distance < 15 then
+                            local args = {
+                                [1] = antiFire.SoundPart,
+                                [2] = antiFire:GetPivot()
+                            }
+                            game:GetService("ReplicatedStorage").GrabEvents.SetNetworkOwner:FireServer(unpack(args))
+                        else
+                            local args = {
+                                [1] = antiFire
+                            }
+                            game:GetService("ReplicatedStorage").MenuToys.DestroyToy:FireServer(unpack(args))
+                        end
+                    end
+                else
+                    local args = {
+                        [1] = "FireExtinguisher",
+                        [2] = player.Character:GetPivot(),
+                        [3] = Vector3.new(0, 0, 0)
+                    }
+                    
+                    game:GetService("ReplicatedStorage").MenuToys.SpawnToyRemoteFunction:InvokeServer(unpack(args))
+                    task.wait(0.2)
+                    local newFire = CheckItem("FireExtinguisher")
+                    if newFire and newFire:FindFirstChild("SoundPart") then
+                        local args = {
+                            [1] = newFire.SoundPart,
+                            [2] = newFire.SoundPart.CFrame
+                        }
+                        game:GetService("ReplicatedStorage").GrabEvents.SetNetworkOwner:FireServer(unpack(args))
+                    end
+                end
+            end
+        end
+    end
+end
+
+local isFire = false
+all.Toggle("Анти-поджёг", function(state)
+    task.spawn(function()
+        if not isCheckingFire then
+            isCheckingFire = true
+            local success, errorMsg = pcall(function()
+                checkFire()
+            end)    
+            if not success then
+                warn("Ошибка в CheckFire:", errorMsg)
+            end
+            isCheckingFire = false
+        end
+    end)
+end)
+
+local isFire = false
+all.Toggle("Анти-отравление", function(state)
+    task.spawn(function()
+        if not isCheckingFire then
+            isCheckingFire = true
+            local success, errorMsg = pcall(function()
+                checkHole()
+            end)    
+            if not success then
+                warn("Ошибка в CheckFire:", errorMsg)
+            end
+            isCheckingFire = false
+        end
+    end)
+end)
