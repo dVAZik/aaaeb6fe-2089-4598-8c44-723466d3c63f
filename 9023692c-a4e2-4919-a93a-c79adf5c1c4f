@@ -3,7 +3,7 @@ local player = game:GetService('Players').LocalPlayer
 
 local hub = lib.Hub('🏀Fling Things and People')
 local fat = hub.Section('💍')
-local all = hub.Section('🩸ALL')
+local all = hub.Section('🩸AааL')
 
 local function checkDistance(pos1, pos2)
     if type(pos1) == 'vector' and type(pos2) == 'vector' then
@@ -130,28 +130,28 @@ local function antiBomb()
 
                             game:GetService("ReplicatedStorage").GrabEvents.SetNetworkOwner:FireServer(unpack(args))
                         else
+                            local args = {
+                                [1] = {
+                                    ["Radius"] = 9999,
+                                    ["TimeLength"] = 9999,
+                                    ["Hitbox"] = bomb.PartHitDetector,
+                                    ["ExplodesByFire"] = false,
+                                    ["MaxForcePerStudSquared"] = 9999,
+                                    ["DestroysModel"] = false,
+                                    ["Model"] = bomb,
+                                    ["ExplodesByPointy"] = true,
+                                    ["ImpactSpeed"] = 9999,
+                                    ["PositionPart"] = workspace
+                                },
+                                [2] = Vector3.new(0, 0, 0)
+                            }
+
+                            game:GetService("ReplicatedStorage").BombEvents.BombExplode:FireServer(unpack(args))
                             break
                         end
                         task.wait()
                     end
                     player.Character:MoveTo(last.Position)
-                    local args = {
-                        [1] = {
-                            ["Radius"] = 9999,
-                            ["TimeLength"] = 9999,
-                            ["Hitbox"] = bomb.PartHitDetector,
-                            ["ExplodesByFire"] = false,
-                            ["MaxForcePerStudSquared"] = 9999,
-                            ["DestroysModel"] = false,
-                            ["Model"] = bomb,
-                            ["ExplodesByPointy"] = true,
-                            ["ImpactSpeed"] = 9999,
-                            ["PositionPart"] = workspace
-                        },
-                        [2] = Vector3.new(0, 0, 0)
-                    }
-
-                    game:GetService("ReplicatedStorage").BombEvents.BombExplode:FireServer(unpack(args))
                 end
             end
         end
