@@ -3,7 +3,7 @@ local player = game:GetService('Players').LocalPlayer
 
 local hub = lib.Hub('🏀Fling Things and People')
 local fat = hub.Section('💍')
-local all = hub.Section('🩸A211')
+local all = hub.Section('🩸ALL1')
 
 local function CheckItem(name)
     local toysFolder = workspace:FindFirstChild(player.Name.."SpawnedInToys")
@@ -67,10 +67,10 @@ local function checkHole()
     for _, plr in pairs(game:GetService('Players'):GetPlayers()) do
         if plr ~= player and plr.Character and plr.Character:FindFirstChild('HumanoidRootPart') then 
             for _, hole in pairs(currentHoles) do
-                if checkDistance(plr.Character:FindFirstChild('HumanoidRootPart').Position, hole.Position) < 45 then
+                if checkDistance(plr.Character:FindFirstChild('HumanoidRootPart').Position, hole.Position) < 35 then
                     last = player.Character:GetPivot()
                     task.wait()
-                    while checkDistance(plr.Character:FindFirstChild('HumanoidRootPart').Position, hole.Position) < 45 do
+                    while checkDistance(plr.Character:FindFirstChild('HumanoidRootPart').Position, hole.Position) < 35 do
                         if not CheckOwn(plr.Character) then
                             player.Character:MoveTo(plr.Character:GetPivot().Position)
                             local args = {
@@ -93,6 +93,46 @@ local function checkHole()
 
                     game:GetService("ReplicatedStorage").GrabEvents.DestroyGrabLine:FireServer(unpack(args))
                     break
+                end
+            end
+        end
+    end
+end
+
+local function antiGrab()
+    if not player.Character then return end
+
+    for _, plr in pairs(game:GetService('Player'):GetPlayers()) do 
+        if plr ~= player and plr.Character and plr.Character:FindFirstChild('GrabParts') then 
+            local grabParts = plr.Character.GrabParts
+            local getGrab = grabParts.GrabPart.WeldConstraint.Part1
+            if getGrab.Parent:FindFirstChildOfClass('Humanoid') then 
+                local currentPlr = game:GetService('Player'):GetPlayerFromCharacter(getGrab)
+                if currentPlr then 
+                    last = player.Character:GetPivot()
+                    task.wait()
+                    while grabParts do
+                        if not CheckOwn(plr.Character) then
+                            player.Character:MoveTo(plr.Character:GetPivot().Position)
+                            local args = {
+                                [1] = plr.Character.HumanoidRootPart,
+                                [2] = plr.Character.HumanoidRootPart.CFrame
+                            }
+
+                            game:GetService("ReplicatedStorage").GrabEvents.SetNetworkOwner:FireServer(unpack(args))
+                        else
+                            break
+                        end
+                        task.wait()
+                    end
+                    plr.Character:MoveTo(Vector3.new(81, 325, 32.5))
+                    player.Character:MoveTo(last.Position)
+                    task.wait()
+                    local args = {
+                        [1] = plr.Character.HumanoidRootPart
+                    }
+
+                    game:GetService("ReplicatedStorage").GrabEvents.DestroyGrabLine:FireServer(unpack(args))
                 end
             end
         end
@@ -172,6 +212,22 @@ all.Toggle("Анти-отравление", function(state)
             isCheckingFire = true
             local success, errorMsg = pcall(function()
                 checkHole()
+            end)    
+            if not success then
+                warn("Ошибка в CheckFire:", errorMsg)
+            end
+            isCheckingFire = false
+        end
+    end)
+end)
+
+local isGrab = false
+all.Toggle("Анти-граб", function(state)
+    task.spawn(function()
+        if not isCheckingFire then
+            isCheckingFire = true
+            local success, errorMsg = pcall(function()
+                antiGrab()
             end)    
             if not success then
                 warn("Ошибка в CheckFire:", errorMsg)
