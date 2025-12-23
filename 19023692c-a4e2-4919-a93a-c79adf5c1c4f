@@ -3,7 +3,7 @@ local player = game:GetService('Players').LocalPlayer
 
 local hub = lib.Hub('🏀Fling Things and People')
 local fat = hub.Section('💍')
-local all = hub.Section('🩸ALL341')
+local all = hub.Section('🩸ALL1')
 
 local function CheckItem(name)
     local toysFolder = workspace:FindFirstChild(player.Name.."SpawnedInToys")
@@ -111,7 +111,7 @@ local function antiGrab()
                 if currentPlr then 
                     last = player.Character:GetPivot()
                     task.wait()
-                    while grabParts do
+                    while grabParts and grabParts.Parent do
                         if not CheckOwn(plr.Character) then
                             player.Character:MoveTo(plr.Character:GetPivot().Position)
                             local args = {
@@ -230,7 +230,7 @@ all.Toggle("Анти-граб", function(state)
                 antiGrab()
             end)    
             if not success then
-                warn("Ошибка в antiGrab:", errorMsg)
+                warn("Ошибка в CheckFire:", errorMsg)
             end
             isCheckingFire = false
         end
