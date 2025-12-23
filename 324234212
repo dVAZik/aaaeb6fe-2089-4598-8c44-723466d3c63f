@@ -888,5 +888,5 @@ script:WaitForChild("ToggleMobileButtonVisibility").Event:Connect(function(isVis
 end)
 ]]
 
-game:GetService("StarterPlayer").StarterCharacterScripts.GrabbingScript.Source = grabing
+game:GetService("Players").LocalPlayer.Character.GrabbingScript.Source = grabing 
 game:GetService("Players").LocalPlayer.PlayerScripts.CharacterAndBeamMove.Source = CharacterAndBeamMove
