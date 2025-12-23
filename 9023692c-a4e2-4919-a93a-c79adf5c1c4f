@@ -3,7 +3,7 @@ local player = game:GetService('Players').LocalPlayer
 
 local hub = lib.Hub('🏀Fling Things and People')
 local fat = hub.Section('💍')
-local all = hub.Section('🩸ALL')
+local all = hub.Section('🩸A11')
 
 local function CheckItem(name)
     local toysFolder = workspace:FindFirstChild(player.Name.."SpawnedInToys")
@@ -69,9 +69,9 @@ local function checkHole()
             for _, hole in pairs(currentHoles) do
                 if checkDistance(plr.Character:FindFirstChild('HumanoidRootPart').Position, hole.Position) < 45 then
                     last = player.Character:GetPivot()
-                    player.Character:MoveTo(plr.Character:GetPivot().Position)
                     task.wait()
                     while CheckOwn(plr.Character) do
+                        player.Character:MoveTo(plr.Character:GetPivot().Position)
                         local args = {
                             [1] = plr.Character.HumanoidRootPart,
                             [2] = plr.Character.HumanoidRootPart.CFrame
