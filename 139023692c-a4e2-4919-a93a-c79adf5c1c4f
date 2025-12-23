@@ -207,7 +207,6 @@ local function checkFire()
             local hum = plr.Character:FindFirstChild("Humanoid")
             if hum and hum.FireDebounce.Value then
                 local antiFire = CheckItem("FireExtinguisher")
-                
                 if antiFire then
                     if CheckOwn(antiFire) then
                         antiFire:MoveTo(plr.Character:GetPivot().Position)
@@ -243,6 +242,7 @@ local function checkFire()
                         }
                         game:GetService("ReplicatedStorage").GrabEvents.SetNetworkOwner:FireServer(unpack(args))
                     end
+                    antiFire:MoveTo(Vector3.new(555, -7.5, -58))
                 end
             end
         end
