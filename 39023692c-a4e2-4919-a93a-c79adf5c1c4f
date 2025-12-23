@@ -5,6 +5,14 @@ local hub = lib.Hub('🏀Fling Things and People')
 local fat = hub.Section('💍')
 local all = hub.Section('🩸ALL')
 
+local function checkDistance(pos1, pos2)
+    if type(pos1) == 'vector' and type(pos2) == 'vector' then
+        return (pos1 - pos2).Magnitude
+        else
+            return math.huge
+    end
+end
+
 local function CheckItem(name)
     local toysFolder = workspace:FindFirstChild(player.Name.."SpawnedInToys")
     if not toysFolder then return false end
@@ -28,6 +36,16 @@ local function CheckOwn(model)
     return false
 end
 
+local function findItems(name)
+    local getList = {}
+    for _, item in pairs(workspace:GetDescendants()) do 
+        if item:IsA('Model') and item.Name == name then
+            table.insert(getList, item)
+        end
+    end
+    return getList
+end
+
 local holes = {}
 local initHoles = false
 local function getHoles() 
@@ -43,14 +61,6 @@ local function getHoles()
         initHoles = true
     end
     return holes
-end
-
-local function checkDistance(pos1, pos2)
-    if type(pos1) == 'vector' and type(pos2) == 'vector' then
-        return (pos1 - pos2).Magnitude
-        else
-            return math.huge
-    end
 end
 
 local function checkHole()
@@ -93,6 +103,55 @@ local function checkHole()
 
                     game:GetService("ReplicatedStorage").GrabEvents.DestroyGrabLine:FireServer(unpack(args))
                     break
+                end
+            end
+        end
+    end
+end
+
+local function antiBomb()
+    if not player.Character then return end
+    local getItems = getList('BombMissile')
+    if #getItems == 0 then return end
+    for _, plr in pairs(game:GetService('Players'):GetPlayers()) do
+        if plr.Character and plr.Character:FindFirstChild('HumanoidRootPart') then 
+            for _, bomb in pairs(getItems) do 
+                local distance = checkDistance(plr.Character.HumanoidRootPart.Position, bomb:GetPivot().Position)
+                if distance < 25 then
+                    last = player.Character:GetPivot()
+                    task.wait()
+                    while bomb and bomb.Parent do
+                        if not CheckOwn(bomb) then
+                            player.Character:MoveTo(bomb:GetPivot().Position)
+                            local args = {
+                                [1] = bomb.Body,
+                                [2] = bomb.Body.CFrame
+                            }
+
+                            game:GetService("ReplicatedStorage").GrabEvents.SetNetworkOwner:FireServer(unpack(args))
+                        else
+                            break
+                        end
+                        task.wait()
+                    end
+                    player.Character:MoveTo(last.Position)
+                    local args = {
+                        [1] = {
+                            ["Radius"] = 9999,
+                            ["TimeLength"] = 9999,
+                            ["Hitbox"] = bomb.PartHitDetector,
+                            ["ExplodesByFire"] = false,
+                            ["MaxForcePerStudSquared"] = 9999,
+                            ["DestroysModel"] = false,
+                            ["Model"] = bomb,
+                            ["ExplodesByPointy"] = true,
+                            ["ImpactSpeed"] = 9999,
+                            ["PositionPart"] = workspace
+                        },
+                        [2] = Vector3.new(0, 0, 0)
+                    }
+
+                    game:GetService("ReplicatedStorage").BombEvents.BombExplode:FireServer(unpack(args))
                 end
             end
         end
@@ -192,31 +251,31 @@ end
 local isFire = false
 all.Toggle("Анти-поджёг", function(state)
     task.spawn(function()
-        if not isCheckingFire then
-            isCheckingFire = true
+        if not isFire then
+            isFire = true
             local success, errorMsg = pcall(function()
                 checkFire()
             end)    
             if not success then
                 warn("Ошибка в CheckFire:", errorMsg)
             end
-            isCheckingFire = false
+            isFire = false
         end
     end)
 end)
 
-local isFire = false
+local isHole = false
 all.Toggle("Анти-отравление", function(state)
     task.spawn(function()
-        if not isCheckingFire then
-            isCheckingFire = true
+        if not isHole then
+            isHole = true
             local success, errorMsg = pcall(function()
                 checkHole()
             end)    
             if not success then
                 warn("Ошибка в CheckFire:", errorMsg)
             end
-            isCheckingFire = false
+            isHole = false
         end
     end)
 end)
@@ -224,15 +283,31 @@ end)
 local isGrab = false
 all.Toggle("Анти-граб", function(state)
     task.spawn(function()
-        if not isCheckingFire then
-            isCheckingFire = true
+        if not isGrab then
+            isGrab = true
             local success, errorMsg = pcall(function()
                 antiGrab()
             end)    
             if not success then
                 warn("Ошибка в CheckFire:", errorMsg)
             end
-            isCheckingFire = false
+            isGrab = false
+        end
+    end)
+end)
+
+local isBomb = false
+all.Toggle("Анти-бомба", function(state)
+    task.spawn(function()
+        if not isBomb then
+            isBomb = true
+            local success, errorMsg = pcall(function()
+                antiBomb()
+            end)    
+            if not success then
+                warn("Ошибка в CheckFire:", errorMsg)
+            end
+            isBomb = false
         end
     end)
 end)
