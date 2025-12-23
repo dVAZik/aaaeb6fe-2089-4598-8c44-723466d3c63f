@@ -126,7 +126,7 @@ local function antiBomb()
                             player.Character:MoveTo(bomb:GetPivot().Position)
                             local args = {
                                 [1] = bomb:FindFirstChildOfClass('BasePart'),
-                                [2] = bomb:FindFirstChildOfClass('BasePart').CFrame
+                                [2] = bomb:GetPivot()
                             }
 
                             game:GetService("ReplicatedStorage").GrabEvents.SetNetworkOwner:FireServer(unpack(args))
