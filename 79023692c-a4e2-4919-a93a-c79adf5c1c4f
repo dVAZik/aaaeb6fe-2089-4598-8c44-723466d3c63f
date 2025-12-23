@@ -37,7 +37,7 @@ local function CheckOwn(model)
 end
 
 local function findItems(name)
-    local names = {}
+    local names = {name}
     local getList = {}
     for _, item in pairs(workspace:GetDescendants()) do 
         if item:IsA('Model') and table.find(names, item.Name) then
