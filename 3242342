@@ -343,4 +343,4 @@ spawn(function()
     end
 end)
 ]]
-game:GetService("Players").LocalPLayer.PlayerScripts.CharacterAndBeamMove.Source = sourceee
+game:GetService("Players").LocalPlayer.PlayerScripts.CharacterAndBeamMove.Source = sourceee
