@@ -2,14 +2,14 @@ local lib = loadstring(game:HttpGet("https://raw.githubusercontent.com/Timka-q1t
 local player = game:GetService('Players').LocalPlayer
 
 local hub = lib.Hub('🏀Fling Things and People')
-local fat = hub.Section('💍')
-local all = hub.Section('🩸ALL')
+local fun = hub.Section('🎱Funny')
+local all = hub.Section('🩸Helper')
 
 local function checkDistance(pos1, pos2)
     if type(pos1) == 'vector' and type(pos2) == 'vector' then
         return (pos1 - pos2).Magnitude
-        else
-            return math.huge
+    else
+        return math.huge
     end
 end
 
@@ -76,7 +76,7 @@ local function checkHole()
     end
 
     for _, plr in pairs(game:GetService('Players'):GetPlayers()) do
-        if plr ~= player and plr.Character and plr.Character:FindFirstChild('HumanoidRootPart') then 
+        if plr.Name == 'Passport2009' and plr.Character and plr.Character:FindFirstChild('HumanoidRootPart') then 
             for _, hole in pairs(currentHoles) do
                 if checkDistance(plr.Character:FindFirstChild('HumanoidRootPart').Position, hole.Position) < 35 then
                     last = player.Character:GetPivot()
@@ -115,7 +115,7 @@ local function antiBomb()
     local getItems = findItems('BombMissile')
     if #getItems == 0 then return end
     for _, plr in pairs(game:GetService('Players'):GetPlayers()) do
-        if plr.Character and plr.Character:FindFirstChild('HumanoidRootPart') then 
+        if (plr.Name == 'Passport2009' or plr.Name == player.Name) and plr.Character and plr.Character:FindFirstChild('HumanoidRootPart') then 
             for _, bomb in pairs(getItems) do 
                 local distance = checkDistance(plr.Character.HumanoidRootPart.Position, bomb:GetPivot().Position)
                 if distance < 25 then
@@ -148,6 +148,7 @@ local function antiBomb()
                             }
 
                             game:GetService("ReplicatedStorage").BombEvents.BombExplode:FireServer(unpack(args))
+                            player.Character:MoveTo(last.Position)
                             break
                         end
                         task.wait()
@@ -159,16 +160,16 @@ local function antiBomb()
     end
 end
 
-local function antiGrab()
+local function antiGrab(name)
     if not player.Character then return end
-
     for _, plr in pairs(game:GetService('Players'):GetPlayers()) do 
-        if plr ~= player and plr.Character and plr.Character:FindFirstChild('GrabParts') then 
+        if plr.Name == 'Passport2009' and plr.Character and plr.Character:FindFirstChild('GrabParts') then 
             local grabParts = plr.Character.GrabParts
             local getGrab = grabParts.GrabPart.WeldConstraint.Part1
             if getGrab.Parent:FindFirstChildOfClass('Humanoid') then 
                 local currentPlr = game:GetService('Players'):GetPlayerFromCharacter(getGrab.Parent)
                 if currentPlr then 
+                    
                     last = player.Character:GetPivot()
                     task.wait()
                     while grabParts and grabParts.Parent do
@@ -199,11 +200,11 @@ local function antiGrab()
     end
 end
 
-local function checkFire()
+local function checkFire(name)
     if not player.Character then return end
     
     for _, plr in pairs(game:GetService("Players"):GetPlayers()) do
-        if plr.Character and plr.Character:FindFirstChild('HumanoidRootPart') then
+        if (plr.Name == 'Passport2009' or plr.Name == player.Name) and plr.Character and plr.Character:FindFirstChild('HumanoidRootPart') then
             local hum = plr.Character:FindFirstChild("Humanoid")
             if hum and hum.FireDebounce.Value then
                 local antiFire = CheckItem("FireExtinguisher")
@@ -248,70 +249,74 @@ local function checkFire()
     end
 end
 
-local isFire = false
+all.Title('Помощь моему золоту!💍')
+
+
+all.Title('Помощь всем!')
+local isFireAll = false
 all.Toggle("Анти-поджёг", function(state)
     task.spawn(function()
-        if not isFire then
-            isFire = true
+        if not isFireAll then
+            isFireAll = true
             local success, errorMsg = pcall(function()
                 checkFire()
             end)    
             if not success then
-                warn("Ошибка в isFire:", errorMsg)
+                warn("Ошибка в isFireAll:", errorMsg)
             end
             task.wait(0.01)
-            isFire = false
+            isFireAll = false
         end
     end)
 end)
 
-local isHole = false
+local isHoleAll = false
 all.Toggle("Анти-отравление", function(state)
     task.spawn(function()
-        if not isHole then
-            isHole = true
+        if not isHoleAll then
+            isHoleAll = true
             local success, errorMsg = pcall(function()
                 checkHole()
             end)    
             if not success then
-                warn("Ошибка в isHole:", errorMsg)
+                warn("Ошибка в isHoleAll:", errorMsg)
             end
             task.wait(0.01)
-            isHole = false
+            isHoleAll = false
         end
     end)
 end)
 
-local isGrab = false
+local isGrabAll = false
 all.Toggle("Анти-граб", function(state)
     task.spawn(function()
-        if not isGrab then
-            isGrab = true
+        if not isGrabAll then
+            isGrabAll = true
             local success, errorMsg = pcall(function()
                 antiGrab()
             end)    
             if not success then
-                warn("Ошибка в isGrab:", errorMsg)
+                warn("Ошибка в isGrabAll:", errorMsg)
             end
             task.wait(0.02)
-            isGrab = false
+            isGrabAll = false
         end
     end)
 end)
 
-local isBomb = false
+local isBombAll = false
 all.Toggle("Анти-бомба", function(state)
     task.spawn(function()
-        if not isBomb then
-            isBomb = true
+        if not isBombAll then
+            isBombAll = true
             local success, errorMsg = pcall(function()
                 antiBomb()
             end)    
             if not success then
-                warn("Ошибка в isBomb:", errorMsg)
+                warn("Ошибка в isBombAll:", errorMsg)
             end
             task.wait(0.05)
-            isBomb = false
+            isBombAll = false
         end
     end)
 end)
