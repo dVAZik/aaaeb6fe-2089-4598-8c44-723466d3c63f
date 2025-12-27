@@ -186,7 +186,7 @@ local function antiGrab(name)
                         end
                         task.wait()
                     end
-                    plr.Character:MoveTo(Vector3.new(81, 325, 32.5))
+                    plr.Character:MoveTo(Vector3.new(81, 5000000, 32.5))
                     player.Character:MoveTo(last.Position)
                     task.wait()
                     local args = {
