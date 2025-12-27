@@ -248,11 +248,8 @@ local function checkFire(name)
         end
     end
 end
-
-all.Title('Помощь моему золоту!💍')
-
-
 all.Title('Помощь всем!')
+all.Title('Помощь моему золоту!💍')
 local isFireAll = false
 all.Toggle("Анти-поджёг", function(state)
     task.spawn(function()
