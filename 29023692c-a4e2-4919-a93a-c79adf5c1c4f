@@ -3,7 +3,7 @@ local player = game:GetService('Players').LocalPlayer
 
 local hub = lib.Hub('🏀Fling Things and People')
 local fun = hub.Section('🎱Funny')
-local all = hub.Section('🩸Helper1')
+local all = hub.Section('🩸Helper')
 
 local function checkDistance(pos1, pos2)
     if type(pos1) == 'vector' and type(pos2) == 'vector' then
@@ -186,7 +186,7 @@ local function antiGrab(name)
                         end
                         task.wait()
                     end
-                    currentPlr.Character:MoveTo(Vector3.new(81, 325, 32.5))
+                    plr.Character:MoveTo(Vector3.new(81, 325, 32.5))
                     player.Character:MoveTo(last.Position)
                     task.wait()
                     local args = {
