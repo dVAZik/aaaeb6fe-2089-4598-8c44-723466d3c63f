@@ -3,7 +3,7 @@ local player = game:GetService('Players').LocalPlayer
 
 local hub = lib.Hub('🏀Fling Things and People')
 local fun = hub.Section('🎱Funny')
-local all = hub.Section('🩸Helper')
+local all = hub.Section('🩸Helper1')
 
 local function checkDistance(pos1, pos2)
     if type(pos1) == 'vector' and type(pos2) == 'vector' then
@@ -163,12 +163,12 @@ end
 local function antiGrab(name)
     if not player.Character then return end
     for _, plr in pairs(game:GetService('Players'):GetPlayers()) do 
-        if plr.Name == 'Passport2009' and plr.Character and plr.Character:FindFirstChild('GrabParts') then 
+        if plr.Character and plr.Character:FindFirstChild('GrabParts') then 
             local grabParts = plr.Character.GrabParts
             local getGrab = grabParts.GrabPart.WeldConstraint.Part1
             if getGrab.Parent:FindFirstChildOfClass('Humanoid') then 
                 local currentPlr = game:GetService('Players'):GetPlayerFromCharacter(getGrab.Parent)
-                if currentPlr then 
+                if currentPlr and currentPlr.Name == 'Passport2009' then 
                     
                     last = player.Character:GetPivot()
                     task.wait()
